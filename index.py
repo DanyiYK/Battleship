@@ -68,7 +68,7 @@ def print_grid(grid, hide_ship=False):
 def check_cell(grid, x, y):
     true_size = GRID_SIZE-1
 
-    if x > true_size or x <= 0 or y > true_size or y <= 0:
+    if x > true_size or x < 0 or y > true_size or y < 0:
         return None
     
     return grid[y][x]
@@ -102,7 +102,7 @@ def place_ship(grid, ship_length, x, y, horizontal):
         return "Out of bounds."
     
     # Check for collisions
-    for i in range(1, ship_length+1):
+    for i in range(0, ship_length+1):
         if horizontal and look_for_ships(grid, x+i, y, True):
             return "You can't place ship attached to each other!"
         elif not horizontal and look_for_ships(grid, x, y+i, True):
@@ -178,7 +178,7 @@ while to_place>0:
     print_grid(player_grid)
 
     x, y, horizontal = ask_coords(to_place)
-
+    print("[DEBUG] Received", x, y, horizontal)
     result = place_ship(player_grid, 2, x, y, horizontal)
     
     if result =="Placed":
