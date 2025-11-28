@@ -86,6 +86,7 @@ def look_for_ships(grid, x, y, check_self=False):
     if check_self:
         to_check.append([0, 0])
     
+    print("DEBUG STARTED")
     for i in to_check:
         result = check_cell(grid, x + i[0], y + i[1])
 
@@ -93,6 +94,8 @@ def look_for_ships(grid, x, y, check_self=False):
         if result==SHIP_CHAR:
             return True
     
+    print("DEBUG FINISHED")
+
     return False
 
 def place_ship(grid, ship_length, x, y, horizontal):
@@ -102,7 +105,7 @@ def place_ship(grid, ship_length, x, y, horizontal):
         return "Out of bounds."
     
     # Check for collisions
-    for i in range(0, ship_length+1):
+    for i in range(ship_length):
         if horizontal and look_for_ships(grid, x+i, y, True):
             return "You can't place ship attached to each other!"
         elif not horizontal and look_for_ships(grid, x, y+i, True):
