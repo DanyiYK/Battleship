@@ -68,7 +68,7 @@ def print_grid(grid, hide_ship=False):
 def check_cell(grid, x, y):
     true_size = GRID_SIZE-1
 
-    if x > true_size or x < 0 or y > true_size or y < 0:
+    if x > true_size or x <= 0 or y > true_size or y <= 0:
         return None
     
     return grid[y][x]
@@ -87,7 +87,10 @@ def look_for_ships(grid, x, y, check_self=False):
         to_check.append([0, 0])
     
     for i in to_check:
-        if check_cell(grid, x + i[0], y + i[1])==SHIP_CHAR:
+        result = check_cell(grid, x + i[0], y + i[1])
+
+        print(f"[DEBUG]:", x + i[0], y + i[1], result)
+        if result==SHIP_CHAR:
             return True
     
     return False
@@ -183,6 +186,8 @@ while to_place>0:
         game_event("Your ship was sucessfully placed!")
     else:
         game_event(result)
+
+input()
 
 while not game_finished:
     if player_turn:
