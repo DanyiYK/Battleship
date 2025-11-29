@@ -22,19 +22,16 @@
 import random
 import time
 
+# Game settings
 GRID_SIZE = 5 # Square matrix 5x5
-SHIP_LENGTH = 3
+TOTAL_SHIPS = 3
+SHIP_LENGTH = 2
 WATER_CHAR = "~"
 SHIP_CHAR = "N"
 HIT_CHAR = "X"
 MISS_CHAR = "O"
 
-# Main function which handles game event succession, manages all sub-functions
-def play():
-    # griglia = make_empty_grid(GRID_SIZE)
-
-    print("Welcome to Battleship - Version 1.0")
-
+# Creates a square matrix
 def make_empty_grid(size):
     grid = []
 
@@ -48,7 +45,13 @@ def make_empty_grid(size):
 
     return grid
 
-def print_grid(grid, hide_ship=False):
+# Fancy function to print game's grid
+def print_grid(grid, hide_ship=False, Header=None):
+    print("-"*10)
+
+    if Header:
+        print(Header, end="\n\n")
+
     print("#", end="")
     for i in range(GRID_SIZE):
         print(f" {i}", end="")
@@ -67,6 +70,8 @@ def print_grid(grid, hide_ship=False):
         
         print()
 
+    print("-"*10)
+
 # safely looks at the cords in the grid, if either x or y is out of bounds returns None
 def check_cell(grid, x, y):
     true_size = GRID_SIZE-1
@@ -76,45 +81,38 @@ def check_cell(grid, x, y):
     
     return grid[y][x]
 
-# Returns wether there's a ship near that coordinate
-# Use this for ship placement and to check if a ship has sunk or not
+# Returns wether there's a ship near that coordinates
 def look_for_ships(grid, x, y, check_self=False):
     to_check = [
-        [1, 0],
-        [0, 1],
-        [0, -1],
-        [-1, 0]
+        [1, 0], # Right
+        [-1, 0], # Left
+        [0, 1], # Up
+        [0, -1] # Down
     ]
 
     if check_self:
         to_check.append([0, 0])
     
-    print("DEBUG STARTED")
     for i in to_check:
         result = check_cell(grid, x + i[0], y + i[1])
 
-        print(f"[DEBUG]:", x + i[0], y + i[1], result)
         if result==SHIP_CHAR:
             return True
-    
-    print("DEBUG FINISHED")
 
     return False
 
 def place_ship(grid, ship_length, x, y, horizontal):
-    boundary = GRID_SIZE - (GRID_SIZE - ship_length-1) # Grid boundary
-    print("boundary is", boundary)
-    if (horizontal and x > boundary) or (not horizontal and y > boundary):
+    grid_boundary = GRID_SIZE - (ship_length-1) - 1
+
+    if (horizontal and x > grid_boundary) or (not horizontal and y > grid_boundary):
         return "Out of bounds."
     
     # Check for collisions
     for i in range(ship_length):
-        if horizontal and look_for_ships(grid, x+i, y, True):
-            return "You can't place ship attached to each other!"
-        elif not horizontal and look_for_ships(grid, x, y+i, True):
+        if horizontal and look_for_ships(grid, x+i, y, True) or not horizontal and look_for_ships(grid, x, y+i, True):
             return "You can't place ship attached to each other!"
     
-   # Check for collisions
+    # Place ship
     for i in range(ship_length):
         if horizontal:
             grid[y][x+i] = "N"
@@ -122,14 +120,12 @@ def place_ship(grid, ship_length, x, y, horizontal):
         elif not horizontal:
             grid[y+i][x] = "N"
 
-    print_grid(grid)
-
     return "Placed"
 
 def hit_cell(grid, x, y):
     cell_content = check_cell(grid, x, y)
 
-    if cell_content==MISS_CHAR:
+    if cell_content==None or cell_content==MISS_CHAR or cell_content==HIT_CHAR:
         return "You already hit this point!"
     if cell_content!="N":
         grid[y][x] = MISS_CHAR
@@ -143,7 +139,7 @@ def hit_cell(grid, x, y):
     else:
         return "Ship was hit and sunk, well played!"
 
-def ask_coords(remaining_ships):
+def ask_ship_coords(remaining_ships):
     text = input(f"Insert coords (Ships: {remaining_ships}) (ex: '0 0 h/v'): ")
     coords = text.split(" ")
 
@@ -156,39 +152,36 @@ def ask_coords(remaining_ships):
     return int(coords[0]), int(coords[1]), bool(coords[2])
 
 def bot_place_ships(grid, ship_count, ship_length):
-    boundary = GRID_SIZE - (GRID_SIZE - ship_length - 1)
+    grid_boundary = GRID_SIZE - (ship_length-1) - 1
     start_count = ship_count
     total_attempts = 0
 
-    start_execution_time = time.perf_counter()
     while ship_count > 0:
         total_attempts += 1
 
         horizontal = random.randint(0, 1) == 0
-        x = random.randint(0, boundary)
-        y = random.randint(0, boundary)
+        x = random.randint(0, grid_boundary)
+        y = random.randint(0, grid_boundary)
         result = place_ship(grid, ship_length, x, y, horizontal)
-        print("[DEBUG] Bot is trying to place a ship with params", x, y, horizontal, "->", result)
 
         if result=="Placed":
             ship_count -= 1
             game_event(f"Bot has placed a ship! Remaining ships {ship_count}/{start_count}")
-            print_grid(bot_grid)
-        else:
-            print("Bot has failed!")
 
-    print(f"[DEBUG] Bot has finished placing with {total_attempts} attempts! ({(time.perf_counter()-start_execution_time)*1000:.2f} ms)")
+# Used in bot's decisions, so they appear more random
+def shuffle_list(list_object):
+    for i in range(len(list_object)):
+        swap_with = random.randint(0, len(list_object)-1)
 
-# A fancy print function to notify the player
+        list_object[i], list_object[swap_with] = list_object[swap_with], list_object[i]
+
+# A fancy print function to highlight game events
 def game_event(text):
-        print("-"*10)
-        print(text)
-        print("-"*10)
+        print(f"[GAME EVENT] {text}")
 
 # Game data
 player_grid = make_empty_grid(GRID_SIZE)
 bot_grid = make_empty_grid(GRID_SIZE)
-
 # bot_grid = [
 #     ["~", "N", "~", "~", "~"],
 #     ["~", "N", "~", "N", "~"],
@@ -197,28 +190,30 @@ bot_grid = make_empty_grid(GRID_SIZE)
 #     ["~", "~", "N", "N", "~"],
 # ]
 
+# These variables are too keep track of sunk ships
 player_hit_count = 0
 computer_hit_count = 0
 
-#If empty, then generate a random number and try to hit it
-#If bot hits a ship and it didn't sank, then try near cells
+# Computer intentions is a list of points (ex [0, 0], [1, 0])
+# If it is empty, then it will just generate a random number and hit it
+# If bot hits a ship and it didn't sunk, add nearby cells to computer_intentions
+# So the bot wil try to sink the ship
 computer_intentions = []
 
-game_finished = True
+game_finished = False
 player_turn = True
 
-bot_place_ships(bot_grid, 3, 2)
+bot_place_ships(bot_grid, TOTAL_SHIPS, SHIP_LENGTH)
 
 # Placing sequence!
-to_place = 3
+to_place = TOTAL_SHIPS
 
-game_event("Place your ships!")
 while to_place>0:
-    print_grid(player_grid)
+    print_grid(player_grid, False, "Place your ships!")
 
-    x, y, horizontal = ask_coords(to_place)
-    print("[DEBUG] Received", x, y, horizontal)
-    result = place_ship(player_grid, 2, x, y, horizontal)
+    x, y, horizontal = ask_ship_coords(to_place)
+
+    result = place_ship(player_grid, SHIP_LENGTH, x, y, horizontal)
     
     if result =="Placed":
         to_place -= 1
@@ -226,15 +221,70 @@ while to_place>0:
     else:
         game_event(result)
 
+game_event("Ship placement phase has finished, get ready!")
+
+# TODO: Improve user experience
 while not game_finished:
     if player_turn:
-        print("It's your turn!")
+        print_grid(bot_grid, True, "It's your turn!")
 
-        # Print grid
+        coords = input("Insert coords of the point you want to hit (ex: 0 0): ")
+        coords = coords.split(" ")
 
-        # Ask coords
+        result = hit_cell(bot_grid, int(coords[0]), int(coords[1]))
 
-        # Hit that point
+        game_event(result)
+
+        if result=="Ship was hit and sunk, well played!":
+            player_hit_count += 1
+
+            if player_hit_count >= TOTAL_SHIPS:
+                game_event("PLAYER WON, CONGRATULATIONS!")
+                game_finished = True
+
+        if result!="You already hit this point!":
+            player_turn = False
+
     else:
-        print("It's bot's turn!")
-        # generate a random x y until
+        print_grid(player_grid, True, "It's bot's turn!\nEnemy field:")
+
+        intention = None
+
+        if len(computer_intentions)>0:
+            intention = computer_intentions.pop()
+        else:
+            intention = [random.randint(0, GRID_SIZE-1), random.randint(0, GRID_SIZE-1)]
+
+        game_event(f"Bot is hitting {intention}")
+        result = hit_cell(player_grid, intention[0], intention[1])
+
+        game_event(f"[Bot] {result}")
+
+        if result=="Ship was hit and sunk, well played!":
+            computer_intentions = []
+        elif result=="Ship was hit, but it didn't sunk yet!":
+            x, y = intention[0], intention[1]
+
+            computer_intentions = [
+                [x + 1, y], # Right
+                [x - 1, y], # Left
+                [x, y + 1], # Up
+                [x, y - 1], # Down
+            ]
+
+            shuffle_list(computer_intentions)
+
+        if result=="Ship was hit and sunk, well played!":
+            computer_hit_count += 1
+
+            if computer_hit_count >= TOTAL_SHIPS:
+                game_event("Seems like you lost to a bot, try again!")
+
+                game_finished = True
+
+
+        if result!="You already hit this point!":
+            print_grid(player_grid, False, "Your field:")
+            player_turn = True
+
+input()
