@@ -23,7 +23,7 @@ import random
 import time
 
 # Game settings
-GRID_SIZE = 5 # Square matrix 5x5
+GRID_SIZE = 10 # Square matrix 5x5
 TOTAL_SHIPS = 3
 SHIP_LENGTH = 2
 WATER_CHAR = "~"
